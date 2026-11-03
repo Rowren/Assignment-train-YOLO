@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOZoo Vision AI — 5 Animal Segmentation Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#050811',
+                        navyCard: '#0B132B',
+                        navyBorder: '#1C2E56',
+                        neonCyan: '#00F0FF',
+                        neonAmber: '#FFB800',
+                        neonPink: '#FF2E93',
+                        neonGreen: '#00E676',
+                        neonPurple: '#A855F7'
+                    },
+                    fontFamily: {
+                        sans: ['"Prompt"', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #050811;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(0, 230, 118, 0.04) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+        .cyber-card {
+            background: rgba(11, 19, 43, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(28, 46, 86, 0.9);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        .cyber-border-glow:hover {
+            border-color: rgba(0, 240, 255, 0.6);
+            box-shadow: 0 0 25px -5px rgba(0, 240, 255, 0.25);
+        }
+        .grid-pattern {
+            background-size: 24px 24px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between grid-pattern">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-50 cyber-card border-b border-navyBorder/80 px-6 py-3.5">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-500 to-indigo-600 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/20">
+                    🦁
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-extrabold tracking-wider text-white">YOLO<span class="text-neonCyan">ZOO</span></span>
+                        <span class="px-2 py-0.5 text-[10px] font-mono font-bold tracking-widest uppercase bg-cyan-400/10 text-cyan-300 border border-cyan-400/30 rounded-md">AI-SEG V26</span>
+                    </div>
+                    <p class="text-xs text-slate-400">ระบบตรวจจับและแบ่งส่วนภาพสัตว์ 5 ชนิด (Polygon Mask)</p>
+                </div>
+            </div>
+
+            <!-- Class Badges (5 Animals) -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> 🐦 นก (Bird)
+                </span>
+                <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 🐱 แมว (Cat)
+                </span>
+                <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span> 🐶 สุนัข (Dog)
+                </span>
+                <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span> 🐴 ม้า (Horse)
+                </span>
+                <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-purple-400"></span> 🐮 วัว (Cow)
+                </span>
+            </div>
+
+            <!-- Server Status -->
+            <div id="apiStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-navyBorder text-xs text-slate-300 font-mono">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>FastAPI :8000</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+        
+        <!-- Headline -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3">
+                ตรวจจับวัตถุและตัดขอบสรีระสัตว์ด้วย <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonCyan via-teal-300 to-indigo-400">Polygon Segmentation</span>
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+                โครงงาน YOLO26n-seg สกัดพิกัดหลายเหลี่ยมตามรูปทรงสัตว์ได้อย่างแม่นยำ พร้อมโหมดเปรียบเทียบ Bounding Box และ Segmentation Mask สดๆ
+            </p>
+        </div>
+
+        <!-- 2 Columns Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Panel (5 Cols): Upload & Controls -->
+            <div class="lg:col-span-5 space-y-5">
+                
+                <!-- Dropzone -->
+                <div id="dropZone" role="button" tabindex="0"
+                     class="cyber-card cyber-border-glow rounded-3xl p-8 text-center cursor-pointer border-2 border-dashed border-navyBorder transition-all duration-300 group">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                        📷
+                    </div>
+                    <p class="text-base font-bold text-white group-hover:text-neonCyan transition-colors">คลิกเลือกภาพ หรือลากมาวางในกรอบ</p>
+                    <p class="text-xs text-slate-400 mt-1.5">รองรับไฟล์ JPG, PNG, WEBP จากอุปกรณ์ของคุณ</p>
+                    
+                    <div class="mt-4 flex flex-wrap justify-center gap-2">
+                        <span class="px-2.5 py-1 text-[11px] font-mono rounded-lg bg-obsidian text-slate-300 border border-navyBorder">YOLO26-seg</span>
+                        <span class="px-2.5 py-1 text-[11px] font-mono rounded-lg bg-obsidian text-slate-300 border border-navyBorder">640x640 In</span>
+                        <span class="px-2.5 py-1 text-[11px] font-mono rounded-lg bg-obsidian text-slate-300 border border-navyBorder">5 Classes</span>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </div>
+
+                <!-- Settings Card -->
+                <div class="cyber-card rounded-3xl p-6 border border-navyBorder space-y-5">
+                    <div class="flex items-center justify-between border-b border-navyBorder/60 pb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                            <span>⚡</span> ตัวเลือกการแสดงผล
+                        </h3>
+                        <span class="text-[11px] text-cyan-400 font-mono">Live Filter</span>
+                    </div>
+
+                    <!-- Render Mode Buttons -->
+                    <div>
+                        <label class="text-xs text-slate-300 font-medium block mb-2">รูปแบบผลลัพธ์ (Detection Mode)</label>
+                        <div class="grid grid-cols-3 gap-2 bg-obsidian p-1.5 rounded-2xl border border-navyBorder text-xs font-semibold">
+                            <button type="button" class="mode-btn py-2.5 rounded-xl text-slate-400 hover:text-white transition-all" data-mode="box">
+                                Bounding Box
+                            </button>
+                            <button type="button" class="mode-btn py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg" data-mode="mask">
+                                Polygon Mask
+                            </button>
+                            <button type="button" class="mode-btn py-2.5 rounded-xl text-slate-400 hover:text-white transition-all" data-mode="both">
+                                Box + Mask
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Slider -->
+                    <div>
+                        <div class="flex justify-between items-center text-xs mb-2">
+                            <span class="text-slate-300 font-medium">Confidence Threshold:</span>
+                            <span id="confValue" class="font-mono text-neonCyan font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">0.25</span>
+                        </div>
+                        <input id="confSlider" type="range" min="0.05" max="0.95" step="0.05" value="0.25"
+                               class="w-full accent-neonCyan bg-slate-800 rounded-lg h-2 cursor-pointer">
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+                            <span>0.05 (เน้นตรวจติด)</span>
+                            <span>0.50</span>
+                            <span>0.95 (มั่นใจสูงสุด)</span>
+                        </div>
+                    </div>
+
+                    <!-- Predict Trigger Button -->
+                    <button id="predictBtn" disabled
+                            class="w-full py-4 px-6 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 hover:opacity-95 disabled:opacity-30 disabled:cursor-not-allowed shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center gap-3">
+                        <svg id="spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="btnText">เริ่มการตรวจจับวัตถุ (Predict)</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Right Panel (7 Cols): Dual Viewport & Output -->
+            <div class="lg:col-span-7 space-y-5">
+                
+                <!-- Error Banner -->
+                <div id="errorBox" class="hidden p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm font-medium flex items-center gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <span id="errorMsg">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</span>
+                </div>
+
+                <!-- Dual Viewport Card -->
+                <div class="cyber-card rounded-3xl p-6 border border-navyBorder space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-navyBorder/60">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                            <span id="fileName" class="text-xs text-slate-400 font-mono ml-2">รอเลือกภาพ...</span>
+                        </div>
+                        <div id="detectBadge" class="hidden px-3 py-1 rounded-full text-xs font-bold bg-cyan-400/10 text-neonCyan border border-cyan-400/30 font-mono">
+                            พบ 0 วัตถุ
+                        </div>
+                    </div>
+
+                    <!-- Image Display Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        
+                        <!-- Original Preview -->
+                        <div class="space-y-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">ภาพต้นฉบับ (Original)</span>
+                            <div class="h-64 sm:h-72 rounded-2xl bg-obsidian border border-navyBorder overflow-hidden flex items-center justify-center relative">
+                                <img id="previewImg" class="max-h-full max-w-full object-contain hidden" alt="Original">
+                                <div id="previewPlaceholder" class="text-center p-6 text-slate-600">
+                                    <div class="text-3xl mb-1 opacity-40">🖼️</div>
+                                    <p class="text-xs">ยังไม่มีภาพที่เลือก</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prediction Output -->
+                        <div class="space-y-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-neonCyan block">ผลการทำนาย (Prediction Output)</span>
+                            <div class="h-64 sm:h-72 rounded-2xl bg-obsidian border border-cyan-500/30 overflow-hidden flex items-center justify-center relative shadow-inner">
+                                <img id="resultImg" class="max-h-full max-w-full object-contain hidden" alt="YOLO Result">
+                                
+                                <div id="resultPlaceholder" class="text-center p-6 text-slate-600">
+                                    <div class="text-3xl mb-1 opacity-40">✨</div>
+                                    <p class="text-xs">ผลลัพธ์จะปรากฏที่นี่</p>
+                                </div>
+
+                                <!-- Loading Animation -->
+                                <div id="loadingOverlay" class="absolute inset-0 bg-obsidian/85 backdrop-blur-sm flex flex-col items-center justify-center gap-3 hidden">
+                                    <div class="w-10 h-10 border-4 border-neonCyan border-t-transparent rounded-full animate-spin"></div>
+                                    <p class="text-xs font-semibold text-cyan-300 animate-pulse font-mono">กำลังประมวลผลโมเดล YOLO26...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Results Detail Table -->
+                <div id="tableSection" class="hidden cyber-card rounded-3xl p-6 border border-navyBorder space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <span>📊</span> รายการวัตถุที่ตรวจพบ (Detection Data)
+                    </h3>
+                    <div class="overflow-x-auto rounded-2xl border border-navyBorder/80">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-navyCard text-slate-400 font-mono uppercase tracking-wider border-b border-navyBorder">
+                                <tr>
+                                    <th class="py-3 px-4">#</th>
+                                    <th class="py-3 px-4">ชนิดสัตว์ (Class)</th>
+                                    <th class="py-3 px-4">ความมั่นใจ (Confidence)</th>
+                                    <th class="py-3 px-4">พิกัดกรอบ [x0, y0, x1, y1]</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-navyBorder/40 bg-obsidian/40 font-mono">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="cyber-card border-t border-navyBorder/80 py-5 px-6 text-center text-xs text-slate-400 mt-8">
+        <p class="font-medium text-slate-300">
+            โครงงานตรวจจับและแบ่งส่วนภาพสัตว์ด้วย YOLO (Rectangle & Polygon Segmentation)
+        </p>
+        <p class="mt-1.5 text-slate-400">
+            รหัสนักศึกษา: <span class="font-mono text-neonCyan font-bold">6806021411325</span> | สาขาวิชาเทคโนโลยีสารสนเทศ (ITI)
+        </p>
+    </footer>
+
+    <!-- Interactive Script -->
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const confSlider = document.getElementById('confSlider');
+        const confValue = document.getElementById('confValue');
+        const predictBtn = document.getElementById('predictBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        const errorBox = document.getElementById('errorBox');
+        const errorMsg = document.getElementById('errorMsg');
+        const previewImg = document.getElementById('previewImg');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const resultImg = document.getElementById('resultImg');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const detectBadge = document.getElementById('detectBadge');
+        const tableSection = document.getElementById('tableSection');
+        const tableBody = document.getElementById('tableBody');
+        const fileName = document.getElementById('fileName');
+
+        let selectedFile = null;
+        let selectedMode = 'mask';
+        
+        // Auto API Host Resolution
+        const apiBase = window.location.port === '5500'
+            ? `${window.location.protocol}//${window.location.hostname}:8000`
+            : '';
+
+        // Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-cyan-400', 'bg-cyan-500/10'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-cyan-400', 'bg-cyan-500/10'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-cyan-400', 'bg-cyan-500/10');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) return;
+            selectedFile = file;
+            fileName.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                previewPlaceholder.classList.add('hidden');
+                
+                resultImg.classList.add('hidden');
+                resultPlaceholder.classList.remove('hidden');
+                detectBadge.classList.add('hidden');
+                tableSection.classList.add('hidden');
+                predictBtn.disabled = false;
+                errorBox.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Slider Change
+        confSlider.addEventListener('input', () => {
+            confValue.textContent = confSlider.value;
+        });
+
+        // Mode Switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => {
+                    b.classList.remove('bg-gradient-to-r', 'from-cyan-500', 'to-indigo-600', 'text-white', 'shadow-lg');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-gradient-to-r', 'from-cyan-500', 'to-indigo-600', 'text-white', 'shadow-lg');
+                btn.classList.remove('text-slate-400');
+                selectedMode = btn.dataset.mode;
+            });
+        });
+
+        // Animal Badges Styling
+        const CLASS_BADGES = {
+            'bird': 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+            'cat': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+            'dog': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+            'horse': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+            'cow': 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+        };
+
+        // Predict API Call
+        predictBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            predictBtn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'กำลังประมวลผล...';
+            loadingOverlay.classList.remove('hidden');
+            errorBox.classList.add('hidden');
+
+            const fd = new FormData();
+            fd.append('file', selectedFile);
+            fd.append('conf', confSlider.value);
+            fd.append('mode', selectedMode);
+
+            try {
+                const res = await fetch(`${apiBase}/predict`, { method: 'POST', body: fd });
+                if (res.status === 405) {
+                    throw new Error('กรุณารัน FastAPI Backend ด้วยคำสั่ง python app/main.py');
+                }
+                if (!res.ok) {
+                    throw new Error(`เซิร์ฟเวอร์ตอบกลับรหัสข้อผิดพลาด HTTP ${res.status}`);
+                }
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                resultImg.src = data.image;
+                resultImg.classList.remove('hidden');
+                resultPlaceholder.classList.add('hidden');
+
+                detectBadge.textContent = `พบ ${data.count} วัตถุ`;
+                detectBadge.classList.remove('hidden');
+
+                if (data.detections && data.detections.length > 0) {
+                    tableBody.innerHTML = data.detections.map((d, i) => {
+                        const styleClass = CLASS_BADGES[d.class.toLowerCase()] || 'bg-slate-700/30 text-slate-300 border-slate-600/30';
+                        return `
+                            <tr class="hover:bg-cyan-500/5 transition-colors">
+                                <td class="py-3 px-4 text-slate-500">${i+1}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold border ${styleClass}">
+                                        ${d.class}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 font-bold text-neonCyan">${(d.confidence * 100).toFixed(1)}%</td>
+                                <td class="py-3 px-4 text-slate-400">[${d.bbox.join(', ')}]</td>
+                            </tr>
+                        `;
+                    }).join('');
+                    tableSection.classList.remove('hidden');
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">ไม่พบวัตถุตามเกณฑ์ (ลองปรับลดค่า Confidence ดูครับ)</td></tr>`;
+                    tableSection.classList.remove('hidden');
+                }
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorBox.classList.remove('hidden');
+            } finally {
+                predictBtn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = 'เริ่มการตรวจจับวัตถุ (Predict)';
+                loadingOverlay.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
