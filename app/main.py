@@ -124,5 +124,7 @@ async def health():
     return {"status": "ok", "weights": str(WEIGHTS), "weights_exists": WEIGHTS.exists()}
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
